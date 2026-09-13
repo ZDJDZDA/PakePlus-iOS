@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>国内 AI API 价格对比</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #232735;
+    --border: #2e3347;
+    --text: #e4e6f0;
+    --text2: #9ca3b8;
+    --accent: #6c8cff;
+    --accent2: #8b5cf6;
+    --green: #34d399;
+    --orange: #fb923c;
+    --red: #f87171;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1a1d27 0%, #232735 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 1.5rem 1.5rem;
+    text-align: center;
+  }
+
+  header h1 {
+    font-size: 1.8rem;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: .5rem;
+  }
+
+  header p { color: var(--text2); font-size: .9rem; }
+
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    padding: 1rem 1.5rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    justify-content: center;
+  }
+
+  .filter-btn {
+    padding: .4rem 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-size: .82rem;
+    cursor: pointer;
+    transition: all .2s;
+  }
+
+  .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+  .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .search-wrap {
+    padding: 1rem 1.5rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: center;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    max-width: 480px;
+    padding: .55rem 1rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font-size: .9rem;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 1.15rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+  }
+
+  .section-title .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 1rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+    transition: border-color .2s, transform .2s;
+  }
+
+  .card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .provider-name {
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+
+  .provider-badge {
+    font-size: .7rem;
+    padding: .2rem .55rem;
+    border-radius: 10px;
+    background: rgba(108, 140, 255, .15);
+    color: var(--accent);
+  }
+
+  .model-list { display: flex; flex-direction: column; gap: .6rem; }
+
+  .model-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: .6rem .85rem;
+    transition: background .2s;
+  }
+
+  .model-row:hover { background: rgba(108,140,255,.08); }
+
+  .model-info { display: flex; flex-direction: column; gap: .15rem; }
+
+  .model-name {
+    font-size: .85rem;
+    font-weight: 500;
+  }
+
+  .model-tag {
+    font-size: .68rem;
+    color: var(--text2);
+  }
+
+  .price-info {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-shrink: 0;
+  }
+
+  .price-block {
+    text-align: right;
+  }
+
+  .price-val {
+    font-size: .82rem;
+    font-weight: 600;
+    color: var(--green);
+  }
+
+  .price-val.high { color: var(--orange); }
+  .price-val.premium { color: var(--red); }
+
+  .price-label {
+    font-size: .65rem;
+    color: var(--text2);
+  }
+
+  .compare-bar {
+    margin-top: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem;
+  }
+
+  .compare-bar h3 { margin-bottom: 1rem; font-size: 1.05rem; }
+
+  .chart-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .chart-table th {
+    text-align: left;
+    padding: .5rem .75rem;
+    font-size: .78rem;
+    color: var(--text2);
+    font-weight: 500;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .chart-table td {
+    padding: .6rem .75rem;
+    font-size: .82rem;
+    border-bottom: 1px solid rgba(46,51,71,.5);
+  }
+
+  .chart-table tr:hover td { background: rgba(108,140,255,.05); }
+
+  .trend-up { color: var(--red); }
+  .trend-down { color: var(--green); }
+  .trend-same { color: var(--text2); }
+
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: var(--text2);
+    font-size: .78rem;
+    border-top: 1px solid var(--border);
+    margin-top: 2rem;
+  }
+
+  .note {
+    background: rgba(251, 146, 60, .1);
+    border: 1px solid rgba(251, 146, 60, .3);
+    border-radius: 10px;
+    padding: .75rem 1rem;
+    margin-bottom: 1.5rem;
+    font-size: .8rem;
+    color: var(--orange);
+  }
+
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+    header h1 { font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>国内 AI API 价格对比</h1>
+  <p>聚合主流国产大模型 API 调用价格 · 按输入/输出 Token 计费（元 / 百万 Token）</p>
+</header>
+
+<div class="search-wrap">
+  <input type="text" id="searchInput" placeholder="搜索模型名称或厂商…">
+</div>
+
+<div class="filters">
+  <button class="filter-btn active" data-filter="all">全部</button>
+  <button class="filter-btn" data-filter="chat">对话</button>
+  <button class="filter-btn" data-filter="embedding">向量</button>
+  <button class="filter-btn" data-filter="image">图像</button>
+  <button class="filter-btn" data-filter="code">代码</button>
+  <button class="filter-btn" data-filter="free">免费额度</button>
+</div>
+
+<div class="container">
+  <div class="note">
+    ⚠️ 价格截至 2026 年 9 月，各厂商可能随时调整，实际请以官网为准。部分模型有免费额度或新用户优惠，详见各平台。
+  </div>
+
+  <h2 class="section-title"><span class="dot"></span>模型价格</h2>
+  <div class="grid" id="grid"></div>
+
+  <div class="compare-bar">
+    <h3>📊 热门模型性价比速览</h3>
+    <div style="overflow-x:auto;">
+      <table class="chart-table" id="compareTable">
+        <thead>
+          <tr>
+            <th>模型</th>
+            <th>厂商</th>
+            <th>输入价格</th>
+            <th>输出价格</th>
+            <th>上下文</th>
+            <th>趋势</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>数据整理自各厂商官方文档 · 仅供学习参考 · 价格随时变动请以官网为准</p>
+</footer>
+
+<script>
+// ===== 价格数据（元 / 百万 Token） =====
+const providers = [
+  {
+    name: 'DeepSeek',
+    badge: '高性价比',
+    models: [
+      { name: 'DeepSeek-V3', tag: '对话 · 685B MoE', cat: 'chat', inPrice: 2, outPrice: 8, ctx: '64K', trend: 'down' },
+      { name: 'DeepSeek-V3.1', tag: '对话 · 671B MoE', cat: 'chat', inPrice: 2, outPrice: 8, ctx: '128K', trend: 'same' },
+      { name: 'DeepSeek-R1', tag: '推理 · 671B MoE', cat: 'chat', inPrice: 4, outPrice: 16, ctx: '64K', trend: 'same' },
+      { name: 'DeepSeek-R1-0528', tag: '推理增强', cat: 'chat', inPrice: 4, outPrice: 16, ctx: '128K', trend: 'same' },
+    ]
+  },
+  {
+    name: '通义千问 (阿里云)',
+    badge: '国产标杆',
+    models: [
+      { name: 'Qwen-Plus', tag: '对话 · 对标GPT-4', cat: 'chat', inPrice: 5, outPrice: 15, ctx: '128K', trend: 'down' },
+      { name: 'Qwen-Max', tag: '对话 · 最强模型', cat: 'chat', inPrice: 20, outPrice: 60, ctx: '32K', trend: 'same' },
+      { name: 'Qwen-Turbo', tag: '对话 · 高性价比', cat: 'chat', inPrice: 2, outPrice: 6, ctx: '128K', trend: 'down' },
+      { name: 'Qwen-Long', tag: '长文本 · 超低价格', cat: 'chat', inPrice: 0.5, outPrice: 2, ctx: '1M', trend: 'down' },
+      { name: 'Qwen2.5-72B', tag: '开源对话', cat: 'chat', inPrice: 5, outPrice: 15, ctx: '128K', trend: 'same' },
+      { name: 'Qwen3-235B', tag: '旗舰开源', cat: 'chat', inPrice: 5, outPrice: 15, ctx: '128K', trend: 'new' },
+      { name: 'text-embedding-v3', tag: '向量嵌入', cat: 'embedding', inPrice: 0.5, outPrice: 0, ctx: '8K', trend: 'same' },
+    ]
+  },
+  {
+    name: '豆包 (字节跳动)',
+    badge: '国民应用',
+    models: [
+      { name: 'Doubao-Seed-1.6', tag: '多模态对话', cat: 'chat', inPrice: 2, outPrice: 8, ctx: '256K', trend: 'same' },
+      { name: 'Doubao-Seed-1.6-flash', tag: '极速对话', cat: 'chat', inPrice: 0.3, outPrice: 0.6, ctx: '256K', trend: 'down' },
+      { name: 'Doubao-Seed-1.6-thinking', tag: '深度思考', cat: 'chat', inPrice: 4, outPrice: 8, ctx: '256K', trend: 'same' },
+      { name: 'Doubao-Pro-32k', tag: '旗舰对话', cat: 'chat', inPrice: 5, outPrice: 15, ctx: '32K', trend: 'down' },
+      { name: 'Doubao-vision', tag: '视觉理解', cat: 'image', inPrice: 8, outPrice: 20, ctx: '4K', trend: 'same' },
+    ]
+  },
+  {
+    name: '智谱 AI',
+    badge: '学术强校',
+    models: [
+      { name: 'GLM-4-Plus', tag: '旗舰对话', cat: 'chat', inPrice: 50, outPrice: 50, ctx: '128K', trend: 'down' },
+      { name: 'GLM-4-Flash', tag: '免费 · 轻量', cat: 'chat free', inPrice: 0, outPrice: 0, ctx: '128K', trend: 'same' },
+      { name: 'GLM-4-Air', tag: '性价比对话', cat: 'chat', inPrice: 1, outPrice: 1, ctx: '128K', trend: 'down' },
+      { name: 'GLM-4V-Plus', tag: '多模态视觉', cat: 'image', inPrice: 10, outPrice: 10, ctx: '8K', trend: 'same' },
+      { name: 'GLM-4-Code', tag: '代码生成', cat: 'code', inPrice: 50, outPrice: 50, ctx: '128K', trend: 'same' },
+      { name: 'embedding-3', tag: '向量嵌入', cat: 'embedding', inPrice: 0.5, outPrice: 0, ctx: '8K', trend: 'same' },
+    ]
+  },
+  {
+    name: '文心一言 (百度)',
+    badge: '老牌大厂',
+    models: [
+      { name: 'ERNIE 4.0', tag: '旗舰对话', cat: 'chat', inPrice: 120, outPrice: 120, ctx: '8K', trend: 'down' },
+      { name: 'ERNIE 3.5', tag: '经典对话', cat: 'chat', inPrice: 48, outPrice: 96, ctx: '8K', trend: 'down' },
+      { name: 'ERNIE Speed', tag: '轻量快速', cat: 'chat', inPrice: 0, outPrice: 0, ctx: '8K', trend: 'same' },
+      { name: 'ERNIE 4.0 Turbo', tag: '高性价比', cat: 'chat', inPrice: 12, outPrice: 24, ctx: '128K', trend: 'down' },
+      { name: 'ERNIE Tiny', tag: '极速免费', cat: 'chat free', inPrice: 0, outPrice: 0, ctx: '8K', trend: 'same' },
+    ]
+  },
+  {
+    name: '月之暗面 (Kimi)',
+    badge: '长文本王者',
+    models: [
+      { name: 'Moonshot-v1-8K', tag: '短文本对话', cat: 'chat', inPrice: 12, outPrice: 12, ctx: '8K', trend: 'same' },
+      { name: 'Moonshot-v1-32K', tag: '中等文本', cat: 'chat', inPrice: 24, outPrice: 24, ctx: '32K', trend: 'same' },
+      { name: 'Moonshot-v1-128K', tag: '超长文本', cat: 'chat', inPrice: 60, outPrice: 60, ctx: '128K', trend: 'same' },
+      { name: 'Kimi K2', tag: '新一代对话', cat: 'chat', inPrice: 4, outPrice: 25, ctx: '256K', trend: 'new' },
+    ]
+  },
+  {
+    name: 'MiniMax',
+    badge: '语音合成',
+    models: [
+      { name: 'abab6.5s', tag: '对话 · 高性价比', cat: 'chat', inPrice: 1, outPrice: 1, ctx: '240K', trend: 'down' },
+      { name: 'abab6.5', tag: '旗舰对话', cat: 'chat', inPrice: 30, outPrice: 30, ctx: '8K', trend: 'same' },
+      { name: 'abab7', tag: '新一代对话', cat: 'chat', inPrice: 10, outPrice: 10, ctx: '240K', trend: 'new' },
+      { name: 'speech-02', tag: '语音合成 TTS', cat: 'image', inPrice: 15, outPrice: 0, ctx: '-', trend: 'same' },
+    ]
+  },
+  {
+    name: '科大讯飞 (星火)',
+    badge: '语音交互',
+    models: [
+      { name: 'Spark 4.0 Ultra', tag: '旗舰多模态', cat: 'chat', inPrice: 100, outPrice: 100, ctx: '8K', trend: 'same' },
+      { name: 'Spark 4.0 Max', tag: '高性能对话', cat: 'chat', inPrice: 30, outPrice: 30, ctx: '8K', trend: 'down' },
+      { name: 'Spark Lite', tag: '免费轻量', cat: 'chat free', inPrice: 0, outPrice: 0, ctx: '8K', trend: 'same' },
+      { name: 'Spark Pro', tag: '专业对话', cat: 'chat', inPrice: 30, outPrice: 30, ctx: '8K', trend: 'same' },
+    ]
+  },
+  {
+    name: '腾讯混元',
+    badge: '社交生态',
+    models: [
+      { name: 'hunyuan-turbos', tag: '旗舰 Turbo', cat: 'chat', inPrice: 15, outPrice: 50, ctx: '32K', trend: 'down' },
+      { name: 'hunyuan-pro', tag: '旗舰对话', cat: 'chat', inPrice: 30, outPrice: 100, ctx: '32K', trend: 'same' },
+      { name: 'hunyuan-standard', tag: '标准对话', cat: 'chat', inPrice: 4.5, outPrice: 5, ctx: '32K', trend: 'down' },
+      { name: 'hunyuan-lite', tag: '免费轻量', cat: 'chat free', inPrice: 0, outPrice: 0, ctx: '4K', trend: 'same' },
+      { name: 'hunyuan-vision', tag: '视觉理解', cat: 'image', inPrice: 18, outPrice: 18, ctx: '4K', trend: 'same' },
+    ]
+  },
+  {
+    name: '百川智能',
+    badge: '开源先锋',
+    models: [
+      { name: 'Baichuan4', tag: '旗舰对话', cat: 'chat', inPrice: 100, outPrice: 100, ctx: '32K', trend: 'same' },
+      { name: 'Baichuan3-Turbo', tag: '高性价比', cat: 'chat', inPrice: 12, outPrice: 12, ctx: '32K', trend: 'down' },
+      { name: 'Baichuan3-Turbo-128k', tag: '长文本', cat: 'chat', inPrice: 24, outPrice: 24, ctx: '128K', trend: 'same' },
+      { name: 'Baichuan2-Turbo', tag: '开源对话', cat: 'chat', inPrice: 8, outPrice: 8, ctx: '32K', trend: 'same' },
+    ]
+  },
+  {
+    name: '零一万物',
+    badge: '李开复创办',
+    models: [
+      { name: 'Yi-Lightning', tag: '闪电对话', cat: 'chat', inPrice: 0.99, outPrice: 0.99, ctx: '16K', trend: 'down' },
+      { name: 'Yi-Large', tag: '旗舰对话', cat: 'chat', inPrice: 20, outPrice: 20, ctx: '32K', trend: 'same' },
+      { name: 'Yi-Medium', tag: '中等对话', cat: 'chat', inPrice: 2.5, outPrice: 2.5, ctx: '16K', trend: 'same' },
+      { name: 'Yi-Vision', tag: '视觉理解', cat: 'image', inPrice: 6, outPrice: 6, ctx: '4K', trend: 'same' },
+    ]
+  },
+  {
+    name: '阶跃星辰',
+    badge: '新锐势力',
+    models: [
+      { name: 'Step-1-200k', tag: '长文本对话', cat: 'chat', inPrice: 5, outPrice: 15, ctx: '200K', trend: 'same' },
+      { name: 'Step-1V-8k', tag: '视觉理解', cat: 'image', inPrice: 5, outPrice: 15, ctx: '8K', trend: 'same' },
+      { name: 'Step-2', tag: '新一代对话', cat: 'chat', inPrice: 15, outPrice: 70, ctx: '8K', trend: 'new' },
+    ]
+  },
+  {
+    name: '商汤科技',
+    badge: 'AI 四小龙',
+    models: [
+      { name: 'SenseChat-5', tag: '旗舰对话', cat: 'chat', inPrice: 40, outPrice: 100, ctx: '32K', trend: 'same' },
+      { name: 'SenseChat-5-Coder', tag: '代码生成', cat: 'code', inPrice: 40, outPrice: 100, ctx: '32K', trend: 'same' },
+      { name: 'SenseChat-Turbo', tag: '轻量快速', cat: 'chat', inPrice: 15, outPrice: 45, ctx: '32K', trend: 'down' },
+    ]
+  },
+];
+
+// ===== 渲染 =====
+function priceClass(val) {
+  if (val === 0) return '';
+  if (val <= 5) return '';
+  if (val <= 20) return 'high';
+  return 'premium';
+}
+
+function trendIcon(t) {
+  if (t === 'down') return '<span class="trend-down">↓ 降价</span>';
+  if (t === 'up') return '<span class="trend-up">↑ 涨价</span>';
+  if (t === 'new') return '<span style="color:var(--accent)">🆕 新</span>';
+  return '<span class="trend-same">— 持平</span>';
+}
+
+function renderGrid(data) {
+  const grid = document.getElementById('grid');
+  grid.innerHTML = data.map(p => `
+    <div class="card" data-provider="${p.name}">
+      <div class="card-header">
+        <span class="provider-name">${p.name}</span>
+        <span class="provider-badge">${p.badge}</span>
+      </div>
+      <div class="model-list">
+        ${p.models.map(m => `
+          <div class="model-row" data-cat="${m.cat}">
+            <div class="model-info">
+              <span class="model-name">${m.name}</span>
+              <span class="model-tag">${m.tag} · ${m.ctx}</span>
+            </div>
+            <div class="price-info">
+              <div class="price-block">
+                <div class="price-val ${priceClass(m.inPrice)}">${m.inPrice === 0 ? '免费' : m.inPrice + ' 元'}</div>
+                <div class="price-label">输入 / M tokens</div>
+              </div>
+              <div class="price-block">
+                <div class="price-val ${priceClass(m.outPrice)}">${m.outPrice === 0 ? '免费' : m.outPrice + ' 元'}</div>
+                <div class="price-label">输出 / M tokens</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderCompareTable() {
+  const tbody = document.querySelector('#compareTable tbody');
+  const hotModels = [
+    { model: 'DeepSeek-V3', provider: 'DeepSeek', inP: 2, outP: 8, ctx: '64K', trend: 'down' },
+    { model: 'DeepSeek-R1', provider: 'DeepSeek', inP: 4, outP: 16, ctx: '64K', trend: 'same' },
+    { model: 'Qwen-Turbo', provider: '阿里云', inP: 2, outP: 6, ctx: '128K', trend: 'down' },
+    { model: 'Qwen-Long', provider: '阿里云', inP: 0.5, outP: 2, ctx: '1M', trend: 'down' },
+    { model: 'Doubao-Seed-1.6-flash', provider: '字节', inP: 0.3, outP: 0.6, ctx: '256K', trend: 'down' },
+    { model: 'Doubao-Seed-1.6', provider: '字节', inP: 2, outP: 8, ctx: '256K', trend: 'same' },
+    { model: 'GLM-4-Flash', provider: '智谱', inP: 0, outP: 0, ctx: '128K', trend: 'same' },
+    { model: 'GLM-4-Air', provider: '智谱', inP: 1, outP: 1, ctx: '128K', trend: 'down' },
+    { model: 'ERNIE Speed', provider: '百度', inP: 0, outP: 0, ctx: '8K', trend: 'same' },
+    { model: 'ERNIE 4.0 Turbo', provider: '百度', inP: 12, outP: 24, ctx: '128K', trend: 'down' },
+    { model: 'Kimi K2', provider: '月之暗面', inP: 4, outP: 25, ctx: '256K', trend: 'new' },
+    { name: 'abab6.5s', provider: 'MiniMax', inP: 1, outP: 1, ctx: '240K', trend: 'down' },
+    { model: 'hunyuan-standard', provider: '腾讯', inP: 4.5, outP: 5, ctx: '32K', trend: 'down' },
+    { model: 'Yi-Lightning', provider: '零一万物', inP: 0.99, outP: 0.99, ctx: '16K', trend: 'down' },
+    { model: 'Baichuan3-Turbo', provider: '百川', inP: 12, outP: 12, ctx: '32K', trend: 'down' },
+    { model: 'Step-1-200k', provider: '阶跃星辰', inP: 5, outP: 15, ctx: '200K', trend: 'same' },
+  ];
+
+  tbody.innerHTML = hotModels.map(m => `
+    <tr>
+      <td><strong>${m.model}</strong></td>
+      <td>${m.provider}</td>
+      <td class="${priceClass(m.inP)}">${m.inP === 0 ? '免费' : m.inP + ' 元'}</td>
+      <td class="${priceClass(m.outP)}">${m.outP === 0 ? '免费' : m.outP + ' 元'}</td>
+      <td>${m.ctx}</td>
+      <td>${trendIcon(m.trend)}</td>
+    </tr>
+  `).join('');
+}
+
+// ===== 筛选 =====
+let currentFilter = 'all';
+let currentSearch = '';
+
+function applyFilters() {
+  const filtered = providers
+    .map(p => ({
+      ...p,
+      models: p.models.filter(m => {
+        const matchFilter = currentFilter === 'all' ||
+          (currentFilter === 'free' && m.inPrice === 0) ||
+          m.cat.includes(currentFilter);
+        const matchSearch = !currentSearch ||
+          m.name.toLowerCase().includes(currentSearch) ||
+          p.name.toLowerCase().includes(currentSearch);
+        return matchFilter && matchSearch;
+      })
+    }))
+    .filter(p => p.models.length > 0);
+
+  renderGrid(filtered);
+}
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    applyFilters();
+  });
+});
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  currentSearch = e.target.value.toLowerCase();
+  applyFilters();
+});
+
+// ===== 初始化 =====
+renderGrid(providers);
+renderCompareTable();
+</script>
+</body>
+</html>
